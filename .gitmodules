@@ -1,0 +1,3 @@
+[submodule "ActuallyWorkingWebSockets"]
+	path = ActuallyWorkingWebSockets
+	url = https://github.com/main--/ActuallyWorkingWebSockets.git
