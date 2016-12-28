@@ -2,7 +2,7 @@
 
 The StatsHelix Charizard web framework.
 
-Example:
+## Example
 
 ```csharp
 using System;
