@@ -51,7 +51,11 @@ namespace TestApp
         public HttpResponse Params(string name, int id)
         {
             // We can use parameters
-            return String("name: " + name + " --- id: " + id);
+            return Json(new FooType() { Name: name, Id: id });
+            
+            // Response:
+            // Content-Type: text/json
+            // { "Name": "Hi", "Id": 12 }
         }
         
         // POST /Test/Post HTTP/1.1
