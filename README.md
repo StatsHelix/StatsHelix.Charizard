@@ -48,7 +48,7 @@ namespace TestApp
         }
         
         // GET /Test/Params?name=Hi&id=12 HTTP/1.1
-        pubic HttpResponse Params(string name, int id)
+        public HttpResponse Params(string name, int id)
         {
             // We can use parameters
             return String("name: " + name + " --- id: " + id);
