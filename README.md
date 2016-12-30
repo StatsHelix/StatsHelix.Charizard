@@ -54,7 +54,7 @@ namespace TestApp
             return Json(new FooType() { Name: name, Id: id });
             
             // Response:
-            // Content-Type: text/json
+            // Content-Type: application/json
             // { "Name": "Hi", "Id": 12 }
         }
         
