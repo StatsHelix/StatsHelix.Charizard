@@ -51,7 +51,7 @@ namespace TestApp
         public HttpResponse Params(string name, int id)
         {
             // We can use parameters
-            return Json(new FooType() { Name: name, Id: id });
+            return Json(new FooType { Name = name, Id = id });
             
             // Response:
             // Content-Type: application/json
