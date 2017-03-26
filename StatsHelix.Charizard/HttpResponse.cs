@@ -109,7 +109,7 @@ namespace StatsHelix.Charizard
 
         public static HttpResponse Json(object o, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Json)
         {
-            return String(JsonConvert.SerializeObject(o), status, contentType);
+            return String(JsonConvert.SerializeObject(o, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), status, contentType);
         }
 
         public static HttpResponse String(string s, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Plaintext)
