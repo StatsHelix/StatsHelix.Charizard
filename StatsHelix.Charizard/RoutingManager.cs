@@ -401,7 +401,7 @@ namespace StatsHelix.Charizard
                         // TODO: regex support
                         var path = $"/{actionDef.Controller.Info.Prefix}{method.Name}";
 
-                        var actionResult = Expression.Call(controller, method, args);
+                        var actionResult = Expression.Call(method.IsStatic ? null : controller, method, args);
                         if (actionDef.IsSynchronous)
                             actionResult = Expression.Call(typeof(Task).GetMethod(nameof(Task.FromResult)).MakeGenericMethod(typeof(HttpResponse)), actionResult);
                         var lambda = Expression.Label(earlyReturn, actionResult);
