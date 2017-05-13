@@ -70,7 +70,7 @@ namespace StatsHelix.Charizard
 
             public override string ToString()
             {
-                return $"{Info.Prefix}|{Info.PathParamsPattern}`{String.Join("|", Actions.Select(y => y.Signature))}`";
+                return $"{Info.Prefix}|{Info.PathParamsPattern}`{String.Join("|", Actions.Select(y => y.Signature))}`{String.Join("|", StaticMiddleware.Concat(InstanceMiddleware).Select(HashSignature))}`";
             }
         }
 
@@ -288,8 +288,9 @@ namespace StatsHelix.Charizard
         /// <returns>The "hash" string.</returns>
         private static string HashSignature(MethodInfo method)
         {
+            var kind = method.IsStatic ? "static" : "instance";
             var parameters = String.Join(", ", method.GetParameters().Select(x => $"{x.ParameterType} {x.Name}" + (x.HasDefaultValue ? $" = {x.DefaultValue}" : "")));
-            return $"{method.ReturnType} {method.Name} ( {parameters} )";
+            return $"{method.ReturnType} {kind} {method.Name} ( {parameters} )";
         }
 
         private static Expression BuildActionInvocation(ActionDefinition actionDef, Expression request, Expression controller)
