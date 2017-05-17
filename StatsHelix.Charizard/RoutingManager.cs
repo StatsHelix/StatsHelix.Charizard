@@ -93,10 +93,13 @@ namespace StatsHelix.Charizard
             public string Name { get { return Method.Name; } }
         }
 
+        private readonly HttpServer Server;
         private readonly IRequestDispatcher Dispatcher;
 
-        public RoutingManager(Assembly[] assemblies)
+        public RoutingManager(HttpServer server, Assembly[] assemblies)
         {
+            Server = server;
+
             var qAppMiddleware = from assembly in assemblies
                                  from type in assembly.ExportedTypes
                                  from attr in type.GetCustomAttributes<MiddlewareAttribute>()
@@ -434,11 +437,7 @@ namespace StatsHelix.Charizard
             }
             catch (Exception e)
             {
-#if DEBUG
-                return HttpResponse.String("Internal server error: " + e, HttpStatus.InternalServerError);
-#else
-                return HttpResponse.String("Internal server error.", HttpStatus.InternalServerError);
-#endif
+                return Server.ActionExceptionHandler(e);
             }
         }
     }

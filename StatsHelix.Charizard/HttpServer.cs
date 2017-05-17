@@ -18,7 +18,31 @@ namespace StatsHelix.Charizard
         private const string ServerHeader = "Server: StatsHelix Charizard v1.0";
 
         public IPEndPoint Endpoint { get; }
+
+        /// <summary>
+        /// This event is raised when an unexpected exception occurs.
+        /// Unexpected exceptions are network failures or HTTP protocol
+        /// violations - basically anything that instantly kills a client connection.
+        /// </summary>
         public event Action<Exception> UnexpectedException;
+
+        /// <summary>
+        /// Gets or sets the action exception handler.
+        ///
+        /// It handles exception thrown from controller actions.
+        /// By default, it generates a 500 response.
+        /// </summary>
+        /// <value>The action exception handler.</value>
+        public Func<Exception, HttpResponse> ActionExceptionHandler { get; set; } = DefaultActionExceptionHandler;
+
+        public static HttpResponse DefaultActionExceptionHandler(Exception e)
+        {
+#if DEBUG
+            return HttpResponse.String("Internal server error: " + e, HttpStatus.InternalServerError);
+#else
+            return HttpResponse.String("Internal server error.", HttpStatus.InternalServerError);
+#endif
+        }
 
         private readonly RoutingManager RoutingManager;
 
