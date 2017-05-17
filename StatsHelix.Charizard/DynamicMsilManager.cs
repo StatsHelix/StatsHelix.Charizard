@@ -44,8 +44,14 @@ namespace StatsHelix.Charizard
             {
                 try
                 {
+                    // need to load this for some unknown reason
+                    Assembly.ReflectionOnlyLoad(GetType().Assembly.FullName);
+                    // not using ReflectionOnlyLoadFrom here because that locks the file (at least on windows)
                     var cta = Assembly.ReflectionOnlyLoad(File.ReadAllBytes(Parent.Filename));
-                    return cta?.GetType(Parent.MagicIdFullName)?.GetField(MagicIdMember)?.GetValue(null) as string;
+                    // need to compare by name because it's a different type for some unknown reason
+                    var attr = cta?.CustomAttributes?.SingleOrDefault(x => x.AttributeType.FullName == typeof(MagicIdAttribute).FullName);
+                    // and finally, we can extract the value
+                    return attr?.ConstructorArguments?.FirstOrDefault().Value as string;
                 }
                 catch (Exception)
                 {
@@ -70,10 +76,10 @@ namespace StatsHelix.Charizard
                 var assBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(Parent.AssemblyName), AssemblyBuilderAccess.Save);
                 var modBuilder = assBuilder.DefineDynamicModule(Parent.AssemblyName + ".dll");
 
-                var type = modBuilder.DefineType(Parent.MagicIdFullName, TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Abstract);
-                var testField = type.DefineField(MagicIdMember, typeof(string), FieldAttributes.Literal | FieldAttributes.Public | FieldAttributes.Static);
-                testField.SetConstant(expectedId);
-                type.CreateType();
+
+                assBuilder.SetCustomAttribute(new CustomAttributeBuilder(
+                    typeof(MagicIdAttribute).GetConstructor(new[] { typeof(string) }),
+                    new object[] { expectedId }));
 
                 generator(param, modBuilder);
 
