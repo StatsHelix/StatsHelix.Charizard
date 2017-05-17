@@ -6,6 +6,7 @@ The StatsHelix Charizard web framework.
 
 ```csharp
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 using StatsHelix.Charizard;
@@ -71,7 +72,7 @@ namespace TestApp
         }
         
         // Dummy type for demonstration
-        class FooType
+        public class FooType
         {
             public string Name { get; set; }
             public int Id { get; set; }
