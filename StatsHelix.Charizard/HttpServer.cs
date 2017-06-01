@@ -49,7 +49,7 @@ namespace StatsHelix.Charizard
         public HttpServer(IPEndPoint endpoint, params Assembly[] controllerAssemblies)
         {
             Endpoint = endpoint;
-            RoutingManager = new RoutingManager(controllerAssemblies);
+            RoutingManager = new RoutingManager(this, controllerAssemblies);
         }
 
         public async Task Run()
