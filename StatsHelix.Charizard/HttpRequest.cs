@@ -43,9 +43,11 @@ namespace StatsHelix.Charizard
         public string StringBody { get { return BodyEncoding.GetString(Body); } }
         public Encoding BodyEncoding { get; internal set; }
         public byte[] Body { get; internal set; }
+        public HttpServer Server { get; internal set; }
 
-        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding)
+        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, HttpServer server)
         {
+            Server = server;
             PathUnderlying = path.UnderlyingString;
             PathIndex = path.Index;
             var qindex = path.IndexOf('?');
