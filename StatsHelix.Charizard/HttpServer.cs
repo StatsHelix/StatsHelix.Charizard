@@ -35,6 +35,11 @@ namespace StatsHelix.Charizard
         /// <value>The action exception handler.</value>
         public Func<Exception, HttpResponse> ActionExceptionHandler { get; set; } = DefaultActionExceptionHandler;
 
+        /// <summary>
+        /// An user-managed object to give context to the controllers.
+        /// </summary>
+        public object UserContext { get; set; }
+
         public static HttpResponse DefaultActionExceptionHandler(Exception e)
         {
 #if DEBUG
@@ -164,7 +169,7 @@ namespace StatsHelix.Charizard
 
                                 if (prettyMethod.HasValue)
                                 {
-                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8);
+                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8, this);
 
                                     bool isWebSocket = false;
                                     if (hasBody)
