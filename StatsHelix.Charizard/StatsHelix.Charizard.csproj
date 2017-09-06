@@ -71,13 +71,13 @@
   </Target>
   -->
   <ItemGroup>
-    <ProjectReference Include="..\..\awws\ActuallyWorkingWebSockets\ActuallyWorkingWebSockets.csproj">
-      <Project>{B099DD77-A799-43B7-9E59-EB769309290D}</Project>
-      <Name>ActuallyWorkingWebSockets</Name>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\ActuallyWorkingWebSockets\ActuallyWorkingWebSockets\ActuallyWorkingWebSockets.csproj">
+      <Project>{b099dd77-a799-43b7-9e59-eb769309290d}</Project>
+      <Name>ActuallyWorkingWebSockets</Name>
+    </ProjectReference>
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>
