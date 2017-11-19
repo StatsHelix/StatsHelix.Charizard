@@ -12,6 +12,7 @@ namespace StatsHelix.Charizard
         // 2XX
         Ok,
         NoContent,
+        ResetContent,
         PartialContent,
 
         // 3XX

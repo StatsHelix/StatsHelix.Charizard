@@ -76,6 +76,7 @@ namespace StatsHelix.Charizard
         {
             "HTTP/1.1 200 OK",
             "HTTP/1.1 204 No Content",
+            "HTTP/1.1 205 Reset Content",
             "HTTP/1.1 206 Partial Content",
             "HTTP/1.1 301 Moved Permanently",
             "HTTP/1.1 302 Found",
