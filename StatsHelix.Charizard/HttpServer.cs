@@ -116,6 +116,8 @@ namespace StatsHelix.Charizard
 
         private async void HandleClient(Socket partner)
         {
+            var receivedAt = DateTime.Now;
+
             try
             {
                 Stream readStream;
@@ -129,6 +131,11 @@ namespace StatsHelix.Charizard
                         var questing = new StringSegment(await reader.ReadLineAsync());
                         if (questing.Empty)
                             break;
+
+                        // If it is not the first request, we set the DateTime for this request here
+                        // right after receving the first line, which is presumably in the first packet.
+                        if (receivedAt == DateTime.MinValue)
+                            receivedAt = DateTime.Now;
 
                         headers.Clear();
                         while (true)
@@ -170,7 +177,7 @@ namespace StatsHelix.Charizard
 
                                 if (prettyMethod.HasValue)
                                 {
-                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8, this);
+                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8, receivedAt, this);
 
                                     bool isWebSocket = false;
                                     if (hasBody)
@@ -236,6 +243,7 @@ namespace StatsHelix.Charizard
                                     await writeStream.FlushAsync();
 
                                     // All is well - we can loop (keepalive).
+                                    receivedAt = DateTime.MinValue;
                                     continue;
                                 }
                             }

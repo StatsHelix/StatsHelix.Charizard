@@ -45,11 +45,14 @@ namespace StatsHelix.Charizard
         public byte[] Body { get; internal set; }
         public HttpServer Server { get; internal set; }
 
-        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, HttpServer server)
+        public DateTime ReceivedAt { get; internal set; }
+
+        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, DateTime receivedAt, HttpServer server)
         {
             Server = server;
             PathUnderlying = path.UnderlyingString;
             PathIndex = path.Index;
+            ReceivedAt = receivedAt;
             var qindex = path.IndexOf('?');
             if (qindex < 0)
             {
