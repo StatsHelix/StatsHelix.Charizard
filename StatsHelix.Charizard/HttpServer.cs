@@ -1,6 +1,7 @@
 ﻿using ActuallyWorkingWebSockets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -116,6 +117,7 @@ namespace StatsHelix.Charizard
 
         private async void HandleClient(Socket partner)
         {
+            var receiveTimer = Stopwatch.StartNew();
             var receivedAt = DateTime.Now;
 
             try
@@ -135,7 +137,10 @@ namespace StatsHelix.Charizard
                         // If it is not the first request, we set the DateTime for this request here
                         // right after receving the first line, which is presumably in the first packet.
                         if (receivedAt == DateTime.MinValue)
+                        {
+                            receiveTimer = Stopwatch.StartNew();
                             receivedAt = DateTime.Now;
+                        }
 
                         headers.Clear();
                         while (true)
@@ -177,7 +182,7 @@ namespace StatsHelix.Charizard
 
                                 if (prettyMethod.HasValue)
                                 {
-                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8, receivedAt, this);
+                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8, receivedAt, receiveTimer, this);
 
                                     bool isWebSocket = false;
                                     if (hasBody)

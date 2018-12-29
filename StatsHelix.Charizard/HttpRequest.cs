@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,13 +47,15 @@ namespace StatsHelix.Charizard
         public HttpServer Server { get; internal set; }
 
         public DateTime ReceivedAt { get; internal set; }
+        public Stopwatch ReceiveTimer { get; internal set; }
 
-        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, DateTime receivedAt, HttpServer server)
+        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, DateTime receivedAt, Stopwatch receiveTimer, HttpServer server)
         {
             Server = server;
             PathUnderlying = path.UnderlyingString;
             PathIndex = path.Index;
             ReceivedAt = receivedAt;
+            ReceiveTimer = receiveTimer;
             var qindex = path.IndexOf('?');
             if (qindex < 0)
             {
