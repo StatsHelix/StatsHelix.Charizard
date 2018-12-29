@@ -432,8 +432,8 @@ namespace StatsHelix.Charizard
         {
             try
             {
-                var task = Dispatcher.Dispatch(request);
-                return task == null ? HttpResponse.NotFound() : await task;
+                var task = Dispatcher.Dispatch(request) ?? Server.PageNotFoundHandler(request);
+                return await task;
             }
             catch (Exception e)
             {

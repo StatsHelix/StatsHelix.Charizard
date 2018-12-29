@@ -37,6 +37,14 @@ namespace StatsHelix.Charizard
         public Func<Exception, HttpResponse> ActionExceptionHandler { get; set; } = DefaultActionExceptionHandler;
 
         /// <summary>
+        /// Gets or sets the page-not-found handler.
+        /// 
+        /// This function gets called if a page can't be routed, and allows to customize
+        /// handling this case.
+        /// </summary>
+        public Func<HttpRequest, Task<HttpResponse>> PageNotFoundHandler = (req) => Task.FromResult(HttpResponse.NotFound());
+
+        /// <summary>
         /// An user-managed object to give context to the controllers.
         /// </summary>
         public object UserContext { get; set; }

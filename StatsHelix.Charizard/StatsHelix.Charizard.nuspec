@@ -2,14 +2,14 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>StatsHelix.Charizard</id>
-    <version>0.10.2</version>
+    <version>0.10.3</version>
     <authors>StatsHelix</authors>
     <owners>StatsHelix</owners>
     <license type="file">license.txt</license>
     <projectUrl>https://github.com/StatsHelix/StatsHelix.Charizard/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A lean, performant C#-Webserver, mainly for SPAs.</description>
-    <releaseNotes>Add even more accurate ReceiveTimer stopwatch.</releaseNotes>
+    <releaseNotes>Add PageNotFound-Handler that handles 404s</releaseNotes>
     <tags>webserver server</tags>
     <dependencies>
       <dependency id="Newtonsoft.Json" version="10.0.3" />
