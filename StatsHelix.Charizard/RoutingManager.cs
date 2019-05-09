@@ -162,7 +162,6 @@ namespace StatsHelix.Charizard
             var cp = (CodegenInfo)param;
             var byController = cp.Controllers;
 
-            var regexThing = new RegexApiAbuse(modBuilder);
             for (int i = 0; i < byController.Length; i++)
             {
                 var cntr = byController[i];
@@ -170,7 +169,7 @@ namespace StatsHelix.Charizard
                 if (pattern != null)
                 {
                     var klass = $"{CharizardDynamic}.Regex{i}__{cntr.Type.Name}";
-                    regexThing.CompileRegex(pattern, RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, klass, TimeSpan.Zero, true);
+                    throw new InvalidOperationException("regexes not supported in this build");
                 }
             }
 
