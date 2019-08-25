@@ -121,6 +121,20 @@ namespace StatsHelix.Charizard
                         select grouped;
             var byController = qCntr.ToArray();
 
+            var likelyBugs = from assembly in assemblies
+                             from type in assembly.DefinedTypes
+                             from attr in type.GetCustomAttributes<ControllerAttribute>()
+                             where type.IsNotPublic
+                             select type;
+
+            var bugs = likelyBugs.ToList();
+
+            if (bugs.Count > 0)
+            {
+                var plural = bugs.Count > 1;
+                throw new InvalidProgramException($"The class{(plural ? "es" : "")} {string.Join(", ", bugs)} {(plural ? "are" : "is")} declared as charizard-controller, but not declared as public. Remove the attribute, or make it the type public.");
+            }
+
             foreach (var controller in byController)
                 controller.Key.Actions = controller.ToArray();
 
