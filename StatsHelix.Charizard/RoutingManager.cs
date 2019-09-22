@@ -15,6 +15,7 @@ namespace StatsHelix.Charizard
     // aka google maps
     public class RoutingManager
     {
+        private const int VERSION = 2; // increment whenever codegen changes to update dynamic assemblies
         private const string CharizardDynamic = "StatsHelix.Charizard.Dynamic";
         private const string RequestDispatcher = CharizardDynamic + ".RequestDispatcher";
         private static readonly Type[] QuerystringPrimitives = new[] { typeof(string), typeof(string[]), typeof(int), typeof(long), typeof(bool), typeof(double) };
@@ -142,7 +143,7 @@ namespace StatsHelix.Charizard
             // Of course you could still screw things up here but frankly, why would you (other than to shoot your own foot)?
             // The data here comes straight from attributes and class names - there is literally no way to hijack this.
             // Even then, all you get is a simple and obvious DoS.
-            var fullHash = String.Join("\n", byController.Select(x => x.Key))
+            var fullHash = VERSION + String.Join("\n", byController.Select(x => x.Key))
                 + "\n\nMiddleware:\n" + String.Join("\n", appMiddleware.Select(x => $"{x.DeclaringType.FullName}.{x.Name}"));
 
             var manager = new DynamicMsilManager(CharizardDynamic, CharizardDynamic);
@@ -311,122 +312,113 @@ namespace StatsHelix.Charizard
 
         private static Expression BuildActionInvocation(ActionDefinition actionDef, Expression request, Expression controller)
         {
-            // Indentation preserved to avoid needlessly huge diffs.
-            // Welp, doesn't help much.
+            var method = actionDef.Method;
+
+            var args = new List<Expression>();
+            var parameters = method.GetParameters().ToList(); // enumerator with a sentinel null value
+            if (parameters.FirstOrDefault()?.ParameterType == typeof(HttpRequest))
             {
-                {
-                    {
-                        var method = actionDef.Method;
-
-                        Expression[] args = null;
-                        var parameters = method.GetParameters();
-                        if (parameters.Length == 1)
-                        {
-                            if (parameters[0].ParameterType == typeof(HttpRequest))
-                            {
-                                args = new[] { request };
-                            }
-                            else if (!QuerystringPrimitives.Contains(parameters[0].ParameterType))
-                            {
-                                // JsonConvert.DeserializeObject<ParameterType>(request.StringBody)
-                                args = new[]
-                                {
-                                    Expression.Call(typeof(JsonConvert).GetMethods().Single(x =>
-                                    {
-                                        var mParams = x.GetParameters();
-                                        return x.Name == nameof(JsonConvert.DeserializeObject) && x.IsGenericMethod
-                                        && mParams.Length == 1 && mParams[0].ParameterType == typeof(string);
-                                    }).MakeGenericMethod(parameters[0].ParameterType),
-                                    Expression.PropertyOrField(request, nameof(HttpRequest.StringBody)))
-                                };
-                            }
-                        }
-
-                        var earlyReturn = Expression.Label(typeof(Task<HttpResponse>));
-
-                        if (args == null)
-                        {
-                            // last resort: querystring parsing
-
-                            // System.Web.HttpUtility.ParseQueryString(request.QueryString)
-                            var querystring = Expression.Call(typeof(System.Web.HttpUtility).GetMethod(nameof(System.Web.HttpUtility.ParseQueryString),
-                                new[] { typeof(string) }),
-                                Expression.Call(
-                                    Expression.PropertyOrField(request, nameof(HttpRequest.Querystring)), typeof(object).GetMethod(nameof(ToString))));
-
-                            var indexer = GetIndexer(querystring.Type, typeof(string), typeof(string));
-
-                            // now for every parameter:
-                            // * retrieve the string value from the parsed query string
-                            // * try to convert it to the required type
-                            // * if conversion failed (or if there was no param to begin with):
-                            //     * fall back to the default value
-                            //     * if there is no default value, return an error message
-                            args = new Expression[parameters.Length];
-                            for (int i = 0; i < args.Length; i++)
-                            {
-                                var parameterName = parameters[i].Name;
-                                var stringVal = Expression.MakeIndex(querystring, indexer, new[] { Expression.Constant(parameterName) });
-                                var stringVar = Expression.Variable(typeof(string));
-
-                                var pt = parameters[i].ParameterType;
-
-                                // unwrap nullable
-                                var originalPt = pt;
-                                if (pt.IsGenericType && pt.GetGenericTypeDefinition() == typeof(Nullable<>))
-                                    pt = pt.GetGenericArguments()[0];
-
-                                var thingVar = Expression.Variable(pt);
-                                Expression success = Expression.ReferenceNotEqual(stringVar, Expression.Constant(null, typeof(string)));
-
-                                if (pt == typeof(string))
-                                {
-                                    success = Expression.Block(Expression.Assign(thingVar, stringVar), success);
-                                }
-                                else if (pt == typeof(string[]))
-                                {
-                                    success = Expression.Block(Expression.Assign(thingVar, Expression.Call(querystring,
-                                        nameof(System.Collections.Specialized.NameValueCollection.GetValues),
-                                        Type.EmptyTypes, Expression.Constant(parameterName))), success);
-                                }
-                                else if (QuerystringPrimitives.Contains(pt))
-                                {
-                                    success = Expression.AndAlso(success, Expression.Call(pt.GetMethod("TryParse", new[] { typeof(string), pt.MakeByRefType() }), stringVar, thingVar));
-                                }
-                                else
-                                    throw new NotImplementedException();
-
-
-                                // wrap nullable
-                                Expression thingVarResult = thingVar;
-                                if (pt != originalPt)
-                                    thingVarResult = Expression.Convert(thingVar, originalPt);
-
-                                Expression result;
-                                if (parameters[i].HasDefaultValue)
-                                    result = Expression.Condition(success, thingVarResult, Expression.Constant(parameters[i].DefaultValue, originalPt));
-                                else
-                                {
-                                    result = Expression.Block(Expression.IfThenElse(success, Expression.Constant(null), Expression.Return(earlyReturn,
-                                        Expression.Call(typeof(RoutingManager).GetMethod(nameof(InvalidOrMissingParameterHelper)), Expression.Constant(parameterName)))), thingVarResult);
-                                }
-
-                                args[i] = Expression.Block(new[] { thingVar, stringVar }, Expression.Assign(stringVar, stringVal), result);
-                            }
-                        }
-
-                        // TODO: regex support
-                        var path = $"/{actionDef.Controller.Info.Prefix}{method.Name}";
-
-                        var actionResult = Expression.Call(method.IsStatic ? null : controller, method, args);
-                        if (actionDef.IsSynchronous)
-                            actionResult = Expression.Call(typeof(Task).GetMethod(nameof(Task.FromResult)).MakeGenericMethod(typeof(HttpResponse)), actionResult);
-                        var lambda = Expression.Label(earlyReturn, actionResult);
-
-                        return Expression.Block(lambda);
-                    }
-                }
+                // first optional parameter: HttpRequest
+                args.Add(request);
+                parameters.RemoveAt(0);
             }
+            if (parameters.Any() && !QuerystringPrimitives.Contains(parameters.First().ParameterType))
+            {
+                // second optional parameter: HttpRequest
+
+                // JsonConvert.DeserializeObject<ParameterType>(request.StringBody)
+                args.Add(
+                    Expression.Call(typeof(JsonConvert).GetMethods().Single(x =>
+                    {
+                        var mParams = x.GetParameters();
+                        return x.Name == nameof(JsonConvert.DeserializeObject) && x.IsGenericMethod
+                        && mParams.Length == 1 && mParams[0].ParameterType == typeof(string);
+                    }).MakeGenericMethod(parameters.First().ParameterType),
+                    Expression.PropertyOrField(request, nameof(HttpRequest.StringBody)))
+                );
+                parameters.RemoveAt(0);
+            }
+
+            var earlyReturn = Expression.Label(typeof(Task<HttpResponse>));
+
+            // remaining parameters: querystring parsing
+
+            // System.Web.HttpUtility.ParseQueryString(request.QueryString)
+            var querystring = Expression.Call(typeof(System.Web.HttpUtility).GetMethod(nameof(System.Web.HttpUtility.ParseQueryString),
+                new[] { typeof(string) }),
+                Expression.Call(
+                    Expression.PropertyOrField(request, nameof(HttpRequest.Querystring)), typeof(object).GetMethod(nameof(ToString))));
+
+            args.AddRange(parameters.Select(p => BuildQuerystringParam(earlyReturn, querystring, p)));
+
+            // TODO: regex support
+            var path = $"/{actionDef.Controller.Info.Prefix}{method.Name}";
+
+            var actionResult = Expression.Call(method.IsStatic ? null : controller, method, args);
+            if (actionDef.IsSynchronous)
+                actionResult = Expression.Call(typeof(Task).GetMethod(nameof(Task.FromResult)).MakeGenericMethod(typeof(HttpResponse)), actionResult);
+            var lambda = Expression.Label(earlyReturn, actionResult);
+
+            return Expression.Block(lambda);
+        }
+
+        private static BlockExpression BuildQuerystringParam(LabelTarget earlyReturn, Expression querystring, ParameterInfo parameter)
+        {
+            // for every parameter:
+            // * retrieve the string value from the parsed query string
+            // * try to convert it to the required type
+            // * if conversion failed (or if there was no param to begin with):
+            //     * fall back to the default value
+            //     * if there is no default value, return an error message
+            var indexer = GetIndexer(querystring.Type, typeof(string), typeof(string));
+            var parameterName = parameter.Name;
+            var stringVal = Expression.MakeIndex(querystring, indexer, new[] { Expression.Constant(parameterName) });
+            var stringVar = Expression.Variable(typeof(string));
+
+            var pt = parameter.ParameterType;
+
+            // unwrap nullable
+            var originalPt = pt;
+            if (pt.IsGenericType && pt.GetGenericTypeDefinition() == typeof(Nullable<>))
+                pt = pt.GetGenericArguments()[0];
+
+            var thingVar = Expression.Variable(pt);
+            Expression success = Expression.ReferenceNotEqual(stringVar, Expression.Constant(null, typeof(string)));
+
+            if (pt == typeof(string))
+            {
+                success = Expression.Block(Expression.Assign(thingVar, stringVar), success);
+            }
+            else if (pt == typeof(string[]))
+            {
+                success = Expression.Block(Expression.Assign(thingVar, Expression.Call(querystring,
+                    nameof(System.Collections.Specialized.NameValueCollection.GetValues),
+                    Type.EmptyTypes, Expression.Constant(parameterName))), success);
+            }
+            else if (QuerystringPrimitives.Contains(pt))
+            {
+                success = Expression.AndAlso(success, Expression.Call(pt.GetMethod("TryParse", new[] { typeof(string), pt.MakeByRefType() }), stringVar, thingVar));
+            }
+            else
+                throw new NotImplementedException();
+
+
+            // wrap nullable
+            Expression thingVarResult = thingVar;
+            if (pt != originalPt)
+                thingVarResult = Expression.Convert(thingVar, originalPt);
+
+            Expression result;
+            if (parameter.HasDefaultValue)
+                result = Expression.Condition(success, thingVarResult, Expression.Constant(parameter.DefaultValue, originalPt));
+            else
+            {
+                result = Expression.Block(Expression.IfThenElse(success, Expression.Constant(null), Expression.Return(earlyReturn,
+                    Expression.Call(typeof(RoutingManager).GetMethod(nameof(InvalidOrMissingParameterHelper)), Expression.Constant(parameterName)))), thingVarResult);
+            }
+
+            BlockExpression item = Expression.Block(new[] { thingVar, stringVar }, Expression.Assign(stringVar, stringVal), result);
+            return item;
         }
 
         public static Task<HttpResponse> InvalidOrMissingParameterHelper(string parameterName)
