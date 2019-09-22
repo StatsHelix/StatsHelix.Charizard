@@ -187,6 +187,15 @@ namespace StatsHelix.Charizard
                                     prettyMethod = HttpMethod.Post;
                                     hasBody = true;
                                 }
+                                else if (method == "PUT")
+                                {
+                                    prettyMethod = HttpMethod.Put;
+                                    hasBody = true;
+                                }
+                                else if (method == "DELETE")
+                                {
+                                    prettyMethod = HttpMethod.Delete;
+                                }
 
                                 if (prettyMethod.HasValue)
                                 {
@@ -259,6 +268,7 @@ namespace StatsHelix.Charizard
                                     receivedAt = DateTime.MinValue;
                                     continue;
                                 }
+                                else break; // unknown method
                             }
                         }
 

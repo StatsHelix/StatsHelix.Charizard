@@ -40,6 +40,7 @@ namespace StatsHelix.Charizard
         private readonly int PathLen;
         private readonly int QueryLen;
 
+        public HttpMethod Method { get; private set; }
         public List<HttpHeader> Headers { get; internal set; }
         public string StringBody { get { return BodyEncoding.GetString(Body); } }
         public Encoding BodyEncoding { get; internal set; }
@@ -51,6 +52,7 @@ namespace StatsHelix.Charizard
 
         public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, DateTime receivedAt, Stopwatch receiveTimer, HttpServer server)
         {
+            Method = method;
             Server = server;
             PathUnderlying = path.UnderlyingString;
             PathIndex = path.Index;
