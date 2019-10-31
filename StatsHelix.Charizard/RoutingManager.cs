@@ -67,18 +67,6 @@ namespace StatsHelix.Charizard
                 }
                 StaticMiddleware = statics.ToArray();
                 InstanceMiddleware = instance.ToArray();
-                LoadActions();
-            }
-
-            private void LoadActions()
-            {
-                var actions = from method in Type.GetMethods()
-                              where method.GetCustomAttribute<MiddlewareAttribute>() == null
-                              let actionDef = new ActionDefinition(this, method)
-                              where actionDef.IsSynchronous || actionDef.IsAsynchronous // if neither is true, this is an invalid action definition
-                              orderby actionDef.Signature
-                              select actionDef;
-                Actions = actions.ToArray();
             }
 
             public override string ToString()
@@ -94,7 +82,6 @@ namespace StatsHelix.Charizard
             public MethodInfo Method { get; }
             public Type ReturnType { get { return Method.ReturnType; } }
             public bool IsSynchronous { get { return ReturnType == typeof(HttpResponse); } }
-            public bool IsAsynchronous { get { return ReturnType == typeof(Task<HttpResponse>); } }
             public string Signature { get; }
 
             public ActionDefinition(ControllerDefinition controller, MethodInfo method)
@@ -123,12 +110,28 @@ namespace StatsHelix.Charizard
                                  select type;
             var appMiddleware = qAppMiddleware.SelectMany(ParseMiddlewareClass).ToArray();
 
-            var controllers = assemblies.SelectMany(a => a.DefinedTypes)
-                .SelectMany(t => t.GetCustomAttributes<ControllerAttribute>().Select(a => new ControllerDefinition(a, t)))
-                .OrderBy(x => x.Info.Prefix)
-                .ToArray();
+            var qCntr = from assembly in assemblies
+                        from type in assembly.ExportedTypes
+                        from attr in type.GetCustomAttributes<ControllerAttribute>()
+                        let controller = new ControllerDefinition(attr, type)
+                        from method in type.GetMethods()
+                        where method.GetCustomAttribute<MiddlewareAttribute>() == null
+                        let actionDef = new ActionDefinition(controller, method)
+                        where actionDef.IsSynchronous || (actionDef.ReturnType == typeof(Task<HttpResponse>))
+                        orderby actionDef.Signature
+                        group actionDef by controller into grouped
+                        orderby grouped.Key.Info.Prefix
+                        select grouped;
+            var byController = qCntr.ToArray();
 
-            var bugs = controllers.Where(x => x.Type.IsNotPublic).Select(x => x.Type.FullName).ToList();
+            var likelyBugs = from assembly in assemblies
+                             from type in assembly.DefinedTypes
+                             from attr in type.GetCustomAttributes<ControllerAttribute>()
+                             where type.IsNotPublic
+                             select type;
+
+            var bugs = likelyBugs.ToList();
+
             if (bugs.Count > 0)
             {
                 var plural = bugs.Count > 1;
@@ -146,13 +149,13 @@ namespace StatsHelix.Charizard
             // Of course you could still screw things up here but frankly, why would you (other than to shoot your own foot)?
             // The data here comes straight from attributes and class names - there is literally no way to hijack this.
             // Even then, all you get is a simple and obvious DoS.
-            var fullHash = VERSION + String.Join("\n", controllers.AsEnumerable())
+            var fullHash = VERSION + String.Join("\n", byController.Select(x => x.Key))
                 + "\n\nMiddleware:\n" + String.Join("\n", appMiddleware.Select(x => $"{x.DeclaringType.FullName}.{x.Name}"));
 
             var manager = new DynamicMsilManager(CharizardDynamic, CharizardDynamic);
             var compileParams = new CodegenInfo
             {
-                Controllers = controllers,
+                Controllers = byController.Select(x => x.Key).ToArray(),
                 AppMiddleware = appMiddleware,
             };
             var ass = manager.Generate(fullHash, CompileDynamicCode, compileParams);
