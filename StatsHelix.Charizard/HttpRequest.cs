@@ -35,6 +35,19 @@ namespace StatsHelix.Charizard
             }
         }
 
+        public StringSegment PathAndQuery
+        {
+            get
+            {
+                return new StringSegment
+                {
+                    UnderlyingString = PathUnderlying,
+                    Index = PathIndex,
+                    Length = PathLen + QueryLen + 1,
+                };
+            }
+        }
+
         private readonly string PathUnderlying;
         private readonly int PathIndex;
         private readonly int PathLen;
