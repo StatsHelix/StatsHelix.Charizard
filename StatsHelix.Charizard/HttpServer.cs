@@ -218,7 +218,8 @@ namespace StatsHelix.Charizard
                                     else if (prettyMethod == HttpMethod.Get)
                                     {
                                         var connection = request.GetHeader("connection")?.ToLowerInvariant();
-                                        isWebSocket = connection == "upgrade" || connection == "websocket";
+                                        if (connection != null)
+                                            isWebSocket = connection.Split(',').Any(a => a == "upgrade" || a == "websocket");
                                     }
 
                                     var response = await RoutingManager.DispatchRequest(request);
