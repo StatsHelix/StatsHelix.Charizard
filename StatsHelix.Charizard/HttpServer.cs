@@ -327,6 +327,9 @@ namespace StatsHelix.Charizard
                     continue;
                 }
 
+                if (currentIndex + needle.Length > haystack.Length)
+                    return false;
+
                 if (haystack.IndexOf(needle, currentIndex, needle.Length) != -1)
                 {
                     // let's see if afterwards the string
