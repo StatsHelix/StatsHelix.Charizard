@@ -219,7 +219,7 @@ namespace StatsHelix.Charizard
                                     {
                                         var connection = request.GetHeader("connection")?.ToLowerInvariant();
                                         if (connection != null)
-                                            isWebSocket = connection.Split(',').Any(a => a == "upgrade" || a == "websocket");
+                                            isWebSocket = HttpHeaderContains(connection, "upgrade") || HttpHeaderContains(connection, "websocket");
                                     }
 
                                     var response = await RoutingManager.DispatchRequest(request);
@@ -310,6 +310,50 @@ namespace StatsHelix.Charizard
 
             using (var session = new WebSocketSession(netStream, request.Path.ToString(), (IPEndPoint)client.RemoteEndPoint))
                 await handler(session);
+        }
+
+        static bool HttpHeaderContains(string haystack, string needle)
+        {
+            int currentIndex = 0;
+            while (true)
+            {
+                // the string terminates in a comma
+                if (haystack.Length <= currentIndex)
+                    return false;
+
+                if (haystack[currentIndex] == ' ')
+                {
+                    currentIndex++;
+                    continue;
+                }
+
+                if (haystack.IndexOf(needle, currentIndex, needle.Length) != -1)
+                {
+                    // let's see if afterwards the string
+                    // - terminates
+                    // - or a comma
+                    // - has whitespaces (in which case, ignore it, and continue)
+
+                    for (int i = currentIndex + needle.Length; ; i++)
+                    {
+
+                        if (i >= haystack.Length)
+                            return true;
+
+                        if (haystack[i] == ',')
+                            return true;
+
+                        if (haystack[i] == ' ')
+                            continue;
+
+                        return false;
+                    }
+                }
+
+                currentIndex = haystack.IndexOf(',', currentIndex + 1) + 1;
+                if (currentIndex == 0)
+                    return false;
+            }
         }
     }
 }
