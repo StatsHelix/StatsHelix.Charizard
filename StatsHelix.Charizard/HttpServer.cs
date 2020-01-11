@@ -199,7 +199,7 @@ namespace StatsHelix.Charizard
 
                                 if (prettyMethod.HasValue)
                                 {
-                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8, receivedAt, receiveTimer, this);
+                                    var request = new HttpRequest(prettyMethod.Value, path, headers, Encoding.UTF8, receivedAt, receiveTimer, partner.RemoteEndPoint as IPEndPoint, this);
 
                                     bool isWebSocket = false;
                                     if (hasBody)

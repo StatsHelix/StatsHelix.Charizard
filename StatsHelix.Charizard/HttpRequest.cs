@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -63,7 +64,9 @@ namespace StatsHelix.Charizard
         public DateTime ReceivedAt { get; internal set; }
         public Stopwatch ReceiveTimer { get; internal set; }
 
-        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, DateTime receivedAt, Stopwatch receiveTimer, HttpServer server)
+        public IPEndPoint RemoteEndPoint { get; private set; }
+
+        public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, DateTime receivedAt, Stopwatch receiveTimer, IPEndPoint remoteEndPoint, HttpServer server)
         {
             Method = method;
             Server = server;
@@ -71,6 +74,7 @@ namespace StatsHelix.Charizard
             PathIndex = path.Index;
             ReceivedAt = receivedAt;
             ReceiveTimer = receiveTimer;
+            RemoteEndPoint = remoteEndPoint;
             var qindex = path.IndexOf('?');
             if (qindex < 0)
             {
