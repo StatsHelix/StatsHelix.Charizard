@@ -57,6 +57,7 @@
     <Compile Include="HttpStatus.cs" />
     <Compile Include="MiddlewareAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueueStream.cs" />
     <Compile Include="RegexApiAbuse.cs" />
     <Compile Include="RoutingManager.cs" />
     <Compile Include="StringSegment.cs" />

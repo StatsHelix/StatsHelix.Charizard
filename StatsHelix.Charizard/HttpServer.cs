@@ -252,18 +252,34 @@ namespace StatsHelix.Charizard
                                         }
                                     }
 
-                                    await writer.WriteAsync("Content-Length: ");
-                                    await writer.WriteLineAsync(response.Content.Count.ToString());
 
-                                    await writer.WriteLineAsync();
-                                    // This flushes the BufferedStream as well which is NOT what we want.
-                                    // Solving this would require us to either reimplement StreamWriter or
-                                    // to wrap the BufferedStream in another Stream (because it's sealed).
-                                    // Worth it? I don't know.
-                                    await writer.FlushAsync();
+                                    if (response.ContentStream == null)
+                                    {
+                                        await writer.WriteAsync("Content-Length: ");
+                                        await writer.WriteLineAsync(response.Content.Count.ToString());
 
-                                    await writeStream.WriteAsync(response.Content.Array, response.Content.Offset, response.Content.Count);
-                                    await writeStream.FlushAsync();
+                                        await writer.WriteLineAsync();
+                                        // This flushes the BufferedStream as well which is NOT what we want.
+                                        // Solving this would require us to either reimplement StreamWriter or
+                                        // to wrap the BufferedStream in another Stream (because it's sealed).
+                                        // Worth it? I don't know.
+                                        await writer.FlushAsync();
+
+                                        await writeStream.WriteAsync(response.Content.Array, response.Content.Offset, response.Content.Count);
+                                        await writeStream.FlushAsync();
+                                    }
+                                    else
+                                    {
+                                        // We're a streamed response, meaning we have no clue how long we are.
+                                        // So we can't send a length, and we need to close the stream afterwards.
+                                        await writer.WriteLineAsync();
+                                        await writer.FlushAsync();
+
+                                        await response.ContentStream.CopyToAsync(writeStream);
+                                        await writeStream.FlushAsync();
+                                        return;
+                                    }
+
 
                                     // All is well - we can loop (keepalive).
                                     receivedAt = DateTime.MinValue;

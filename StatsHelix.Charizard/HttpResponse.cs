@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -23,6 +22,8 @@ namespace StatsHelix.Charizard
         public List<HttpHeader> ExtraHeaders { get; private set; }
         public HttpStatus Status { get; set; }
         public ContentType ContentType { get; set; }
+
+        public QueueStream ContentStream { get; private set; }
 
         internal Func<WebSocketSession, Task> WebSocketHandler { get; set; }
 
@@ -151,6 +152,23 @@ namespace StatsHelix.Charizard
             return new HttpResponse
             {
                 WebSocketHandler = handler,
+            };
+        }
+
+        /// <summary>
+        /// Opens a stream that can be filled with data to be sent to the client.
+        /// </summary>
+        /// <param name="noCopy">If this is true, you guarantee that all the byte[] you write into ContentStream are 100% immutable. This avoids copying data, and should be faster.</param>
+        /// <param name="status">The HTTP status code to respond with.</param>
+        /// <param name="contentType">The content type to respond with.</param>
+        /// <returns></returns>
+        public static HttpResponse Stream(bool noCopy = false, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.OctetStream)
+        {
+            return new HttpResponse
+            {
+                Status = status,
+                ContentType = contentType,
+                ContentStream = new QueueStream(noCopy),
             };
         }
     }
