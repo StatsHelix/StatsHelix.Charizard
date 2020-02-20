@@ -320,15 +320,17 @@ namespace StatsHelix.Charizard
             {
                 // second optional parameter: HttpRequest
 
-                // JsonConvert.DeserializeObject<ParameterType>(request.StringBody)
+                // JsonConvert.DeserializeObject<ParameterType>(request.StringBody, request.Server.JsonSettings)
                 args.Add(
                     Expression.Call(typeof(JsonConvert).GetMethods().Single(x =>
                     {
-                        var mParams = x.GetParameters();
+                        var mParams = x.GetParameters().Select(p => p.ParameterType);
                         return x.Name == nameof(JsonConvert.DeserializeObject) && x.IsGenericMethod
-                        && mParams.Length == 1 && mParams[0].ParameterType == typeof(string);
+                            && mParams.SequenceEqual(new[] { typeof(string), typeof(JsonSerializerSettings) });
                     }).MakeGenericMethod(parameters.First().ParameterType),
-                    Expression.PropertyOrField(request, nameof(HttpRequest.StringBody)))
+                        Expression.PropertyOrField(request, nameof(HttpRequest.StringBody)),
+                        Expression.PropertyOrField(Expression.PropertyOrField(request, nameof(HttpRequest.Server)), nameof(HttpServer.JsonSettings))
+                    )
                 );
                 parameters.RemoveAt(0);
             }

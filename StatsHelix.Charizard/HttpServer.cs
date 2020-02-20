@@ -1,4 +1,5 @@
 ﻿using ActuallyWorkingWebSockets;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -48,6 +49,11 @@ namespace StatsHelix.Charizard
         /// An user-managed object to give context to the controllers.
         /// </summary>
         public object UserContext { get; set; }
+
+        /// <summary>
+        /// Settings for Newtonsoft.Json serialization and deserialization.
+        /// </summary>
+        public JsonSerializerSettings JsonSettings { get; set; }
 
         public static HttpResponse DefaultActionExceptionHandler(Exception e)
         {
@@ -223,6 +229,7 @@ namespace StatsHelix.Charizard
                                     }
 
                                     var response = await RoutingManager.DispatchRequest(request);
+                                    response.ResolveJsonContent(this);
 
                                     if (response.WebSocketHandler != null)
                                     {

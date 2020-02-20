@@ -17,7 +17,19 @@ namespace StatsHelix.Charizard
         /// </summary>
         public static bool InsecureMode_DoNotUseThisInProduction { get; set; }
 
-        public ArraySegment<byte> Content { get; set; }
+        private bool UnresolvedJsonContent;
+        private object JsonContent;
+        private ArraySegment<byte> _Content;
+        public ArraySegment<byte> Content
+        {
+            get
+            {
+                if (UnresolvedJsonContent)
+                    throw new InvalidOperationException("Can't access content of an unresolved JSON response. Sorry.");
+                return _Content;
+            }
+            set => _Content = value;
+        }
 
         public List<HttpHeader> ExtraHeaders { get; private set; }
         public HttpStatus Status { get; set; }
@@ -26,6 +38,16 @@ namespace StatsHelix.Charizard
         public QueueStream ContentStream { get; private set; }
 
         internal Func<WebSocketSession, Task> WebSocketHandler { get; set; }
+
+        internal void ResolveJsonContent(HttpServer server)
+        {
+            if (UnresolvedJsonContent)
+            {
+                _Content = new ArraySegment<byte>(UTF8.GetBytes(JsonConvert.SerializeObject(JsonContent, server.JsonSettings)));
+                JsonContent = null;
+                UnresolvedJsonContent = false;
+            }
+        }
 
         // Accidentally quadratic, I know.
         // But n is small and I like the ergonomics of doing it this way.
@@ -110,7 +132,15 @@ namespace StatsHelix.Charizard
 
         public static HttpResponse Json(object o, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Json)
         {
-            return String(JsonConvert.SerializeObject(o, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), status, contentType);
+            // Special case: In order to pull in the correct JsonSerializerSettings, we can (no longer) serialize right here.
+            // Instead, mark this response as UnresolvedJsonContent and serialize it as soon as we return back to the HttpServer.
+            return new HttpResponse
+            {
+                Status = status,
+                ContentType = contentType,
+                JsonContent = o,
+                UnresolvedJsonContent = true,
+            };
         }
 
         public static HttpResponse String(string s, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Plaintext)
