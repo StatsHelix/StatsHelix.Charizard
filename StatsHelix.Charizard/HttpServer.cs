@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace StatsHelix.Charizard
 {
@@ -260,7 +261,32 @@ namespace StatsHelix.Charizard
                                     }
 
 
-                                    if (response.ContentStream == null)
+                                    if (response.ContentStream != null)
+                                    {
+                                        await writer.WriteLineAsync("Transfer-Encoding: chunked");
+                                        await writer.WriteLineAsync();
+                                        await writer.FlushAsync();
+
+
+                                        var queue = response.ContentStream.Queue;
+                                        while (await queue.OutputAvailableAsync())
+                                        {
+                                            var chunk = await queue.ReceiveAsync();
+                                            await writer.WriteLineAsync(chunk.Count.ToString("X"));
+
+                                            await writer.FlushAsync();
+                                            await writeStream.WriteAsync(chunk.Array, chunk.Offset, chunk.Count);
+
+                                            await writer.WriteLineAsync();
+                                        }
+
+                                        // stream complete, write termination sequence:
+                                        await writer.WriteLineAsync("0");
+                                        // trailers would go here, if any
+                                        await writer.WriteLineAsync();
+                                        await writer.FlushAsync();
+                                    }
+                                    else
                                     {
                                         await writer.WriteAsync("Content-Length: ");
                                         await writer.WriteLineAsync(response.Content.Count.ToString());
@@ -274,17 +300,6 @@ namespace StatsHelix.Charizard
 
                                         await writeStream.WriteAsync(response.Content.Array, response.Content.Offset, response.Content.Count);
                                         await writeStream.FlushAsync();
-                                    }
-                                    else
-                                    {
-                                        // We're a streamed response, meaning we have no clue how long we are.
-                                        // So we can't send a length, and we need to close the stream afterwards.
-                                        await writer.WriteLineAsync();
-                                        await writer.FlushAsync();
-
-                                        await response.ContentStream.CopyToAsync(writeStream);
-                                        await writeStream.FlushAsync();
-                                        return;
                                     }
 
 
