@@ -25,6 +25,7 @@ namespace StatsHelix.Charizard
         BadRequest,
         Forbidden,
         NotFound,
+        Conflict,
         EntityTooLarge,
 
         // 5XX
