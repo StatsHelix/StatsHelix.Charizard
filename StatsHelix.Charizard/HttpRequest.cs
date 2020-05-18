@@ -40,6 +40,9 @@ namespace StatsHelix.Charizard
         {
             get
             {
+                if (QueryLen == 0)
+                    return Path;
+
                 return new StringSegment
                 {
                     UnderlyingString = PathUnderlying,
