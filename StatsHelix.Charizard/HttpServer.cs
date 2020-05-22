@@ -222,6 +222,11 @@ namespace StatsHelix.Charizard
                                         int read = 1337;
                                         for (int i = 0; (i < body.Length) && (read != 0); i += read)
                                             read = await reader.ReadAsync(body, i, body.Length - i);
+                                        if (read == 0)
+                                        {
+                                            Console.WriteLine("FIXME");
+                                            throw new EndOfStreamException();
+                                        }
                                         request.Body = body;
                                     }
                                     else if (prettyMethod == HttpMethod.Get)
