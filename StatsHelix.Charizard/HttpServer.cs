@@ -136,6 +136,7 @@ namespace StatsHelix.Charizard
             var receiveTimer = Stopwatch.StartNew();
             var receivedAt = DateTime.Now;
 
+            QueueStream danglingContentStream = null;
             try
             {
                 Stream readStream;
@@ -231,6 +232,7 @@ namespace StatsHelix.Charizard
                                     }
 
                                     var response = await RoutingManager.DispatchRequest(request);
+                                    danglingContentStream = response.ContentStream;
                                     response.ResolveJsonContent(this);
 
                                     if (response.WebSocketHandler != null)
@@ -281,6 +283,8 @@ namespace StatsHelix.Charizard
                                             await writer.WriteLineAsync();
                                         }
 
+                                        danglingContentStream = null;
+
                                         // stream complete, write termination sequence:
                                         await writer.WriteLineAsync("0");
                                         // trailers would go here, if any
@@ -326,6 +330,10 @@ namespace StatsHelix.Charizard
             catch (Exception e)
             {
                 UnexpectedException?.Invoke(e);
+            }
+            finally
+            {
+                danglingContentStream?.Dispose();
             }
         }
 
