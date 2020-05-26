@@ -220,13 +220,15 @@ namespace StatsHelix.Charizard
                                         // read body into byte array (not sure about this tho)
                                         var body = new byte[bodyLength];
                                         int read = 1337;
-                                        for (int i = 0; (i < body.Length) && (read != 0); i += read)
+                                        int i = 0;
+                                        for (; (i < body.Length) && (read != 0); i += read)
                                             read = await reader.ReadAsync(body, i, body.Length - i);
                                         if (read == 0)
                                         {
-                                            Console.WriteLine("FIXME");
+                                            Console.WriteLine($"Invalid request: content length is {bodyLength} bytes, but stream closed after {i} bytes");
                                             throw new EndOfStreamException();
                                         }
+
                                         request.Body = body;
                                     }
                                     else if (prettyMethod == HttpMethod.Get)
