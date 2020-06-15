@@ -47,7 +47,7 @@ namespace StatsHelix.Charizard
             return Substring(index, Length - index);
         }
 
-        public bool StartsWith(string str) => (Index + str.Length <= UnderlyingString.Length) && UnderlyingString.IndexOf(str, Index, str.Length) == Index;
+        public bool StartsWith(string str) => (str.Length <= Length) && UnderlyingString.IndexOf(str, Index, str.Length) == Index;
 
         public StringSegment Substring(int index, int length)
         {
