@@ -19,9 +19,9 @@ namespace StatsHelix.Charizard
 
         public StringSegment(string underlying)
         {
-            UnderlyingString = underlying;
+            UnderlyingString = underlying ?? String.Empty;
             Index = 0;
-            Length = UnderlyingString?.Length ?? 0;
+            Length = UnderlyingString.Length;
         }
 
         public char this[int index]
@@ -110,7 +110,7 @@ namespace StatsHelix.Charizard
 
         public override string ToString()
         {
-            return UnderlyingString?.Substring(Index, Length) ?? String.Empty;
+            return UnderlyingString.Substring(Index, Length);
         }
     }
 }
