@@ -31,6 +31,13 @@ namespace StatsHelix.Charizard
         public event Action<Exception> UnexpectedException;
 
         /// <summary>
+        /// This event is raised when a bad request is received (and rejected with a 4xx error code).
+        /// It can be used to log debug information.
+        /// The string is the error reason, i.e. the message that we're returning to the client.
+        /// </summary>
+        public event Action<BadRequestEvent> BadRequest;
+
+        /// <summary>
         /// Gets or sets the action exception handler.
         ///
         /// It handles exception thrown from controller actions.
@@ -196,7 +203,7 @@ namespace StatsHelix.Charizard
             }
         }
 
-        private static async Task<HttpRequest> WriteBadRequest(StreamWriter writer, string reason, HttpStatus status = HttpStatus.BadRequest)
+        private async Task<HttpRequest> WriteBadRequest(StringSegment rline, StreamWriter writer, string reason, HttpStatus status = HttpStatus.BadRequest)
         {
             // If we reach this, something is weird/wrong.
             // "Bye, have a great day!"
@@ -206,6 +213,9 @@ namespace StatsHelix.Charizard
             await writer.WriteLineAsync();
             await writer.WriteLineAsync(reason);
             await writer.FlushAsync();
+
+            BadRequest?.Invoke(new BadRequestEvent(rline.ToString(), reason));
+
             return null; // only returning this so we can chain it to a return statement in the method below
         }
 
@@ -241,12 +251,12 @@ namespace StatsHelix.Charizard
             var space2 = questing.IndexOf(' ', space1 + 1); // if space1 is -1 this is fine as well
 
             if (!((space1 > 0) && (space2 > 0)))
-                return await WriteBadRequest(writer, "Invalid request line");
+                return await WriteBadRequest(questing, writer, "Invalid request line");
             var method = questing.Substring(0, space1);
             var path = questing.Substring(space1 + 1, space2 - space1 - 1);
             var version = questing.Substring(space2 + 1);
             if (!(version == "HTTP/1.1" && path[0] == '/'))
-                return await WriteBadRequest(writer, "Invalid protocol or path");
+                return await WriteBadRequest(questing, writer, "Invalid protocol or path");
             path = path.Substring(1);
 
             HttpMethod prettyMethod;
@@ -270,17 +280,17 @@ namespace StatsHelix.Charizard
                 prettyMethod = HttpMethod.Delete;
             }
             else
-                return await WriteBadRequest(writer, "Invalid or unsupported method");
+                return await WriteBadRequest(questing, writer, "Invalid or unsupported method");
 
             var request = new HttpRequest(prettyMethod, path, headers, Encoding.UTF8, receivedAt, receiveTimer, partner.RemoteEndPoint as IPEndPoint, this);
             if (hasBody)
             {
                 int bodyLength;
                 if (!int.TryParse(request.GetHeader("content-length"), out bodyLength))
-                    return await WriteBadRequest(writer, "Request has body but no content-length given!", HttpStatus.LengthRequired);
+                    return await WriteBadRequest(questing, writer, "Request has body but no content-length given!", HttpStatus.LengthRequired);
 
                 if (bodyLength > MaxRequestBodySize)
-                    return await WriteBadRequest(writer, "Request body too large!", HttpStatus.EntityTooLarge);
+                    return await WriteBadRequest(questing, writer, "Request body too large!", HttpStatus.EntityTooLarge);
 
                 // read body into byte array (not sure about this tho)
                 var body = new byte[bodyLength];
@@ -290,7 +300,7 @@ namespace StatsHelix.Charizard
                     read = await reader.ReadAsync(body, i, body.Length - i);
                 if (read == 0)
                 {
-                    return await WriteBadRequest(writer,
+                    return await WriteBadRequest(questing, writer,
                         $"Invalid request: content length is {bodyLength} bytes, but stream closed after {i} bytes");
                 }
 
