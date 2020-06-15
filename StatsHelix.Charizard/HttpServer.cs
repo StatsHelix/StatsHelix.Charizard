@@ -105,6 +105,7 @@ namespace StatsHelix.Charizard
             "HTTP/1.1 409 Conflict",
             "HTTP/1.1 411 Length Required",
             "HTTP/1.1 413 Request Entity Too Large",
+            "HTTP/1.1 426 Upgrade Required",
             "HTTP/1.1 500 Internal Server Error",
         };
         private static readonly string[] ContentTypeStrings = new[]
@@ -167,11 +168,8 @@ namespace StatsHelix.Charizard
                                 response = HttpResponse.String("Error serializing JSON: " + e, HttpStatus.InternalServerError);
                             }
 
-                            if (response.WebSocketHandler != null)
+                            if ((response.WebSocketHandler != null) && request.IsWebSocket)
                             {
-                                if (!request.IsWebSocket)
-                                    throw new InvalidOperationException("WebSocket provided but not requested.");
-
                                 await HandleWebSocket(partner, readStream, writer, response.WebSocketHandler, request);
                                 return;
                             }

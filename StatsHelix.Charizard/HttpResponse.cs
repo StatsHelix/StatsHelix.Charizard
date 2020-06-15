@@ -179,10 +179,9 @@ namespace StatsHelix.Charizard
 
         public static HttpResponse OpenWebSocket(Func<WebSocketSession, Task> handler)
         {
-            return new HttpResponse
-            {
-                WebSocketHandler = handler,
-            };
+            var response = String("WebSocket response", HttpStatus.UpgradeRequired).AddHeader("Upgrade", "websocket");
+            response.WebSocketHandler = handler;
+            return response;
         }
 
         /// <summary>

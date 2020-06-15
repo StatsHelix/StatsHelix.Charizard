@@ -28,6 +28,7 @@ namespace StatsHelix.Charizard
         Conflict,
         LengthRequired,
         EntityTooLarge,
+        UpgradeRequired,
 
         // 5XX
         InternalServerError,
