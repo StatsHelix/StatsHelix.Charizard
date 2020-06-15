@@ -15,7 +15,7 @@ namespace StatsHelix.Charizard
     // aka google maps
     public class RoutingManager
     {
-        private const int VERSION = 2; // increment whenever codegen changes to update dynamic assemblies
+        private const int VERSION = 3; // increment whenever codegen changes to update dynamic assemblies
         private const string CharizardDynamic = "StatsHelix.Charizard.Dynamic";
         private const string RequestDispatcher = CharizardDynamic + ".RequestDispatcher";
         private static readonly Type[] QuerystringPrimitives = new[] { typeof(string), typeof(string[]), typeof(int), typeof(long), typeof(bool), typeof(double) };

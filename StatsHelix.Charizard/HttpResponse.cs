@@ -8,7 +8,7 @@ using System.Web;
 
 namespace StatsHelix.Charizard
 {
-    public struct HttpResponse
+    public class HttpResponse
     {
         /// <summary>
         /// Disables setting security attributes for all cookies.

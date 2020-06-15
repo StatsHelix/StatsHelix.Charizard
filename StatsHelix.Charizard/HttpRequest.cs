@@ -9,7 +9,7 @@ using System.Web;
 
 namespace StatsHelix.Charizard
 {
-    public struct HttpRequest
+    public class HttpRequest
     {
         public StringSegment Path
         {
@@ -69,6 +69,8 @@ namespace StatsHelix.Charizard
 
         public IPEndPoint RemoteEndPoint { get; private set; }
 
+        public bool IsWebSocket { get; }
+
         public HttpRequest(HttpMethod method, StringSegment path, List<HttpHeader> headers, Encoding bodyEncoding, DateTime receivedAt, Stopwatch receiveTimer, IPEndPoint remoteEndPoint, HttpServer server)
         {
             Method = method;
@@ -93,6 +95,14 @@ namespace StatsHelix.Charizard
             Headers = headers;
             Body = null;
             BodyEncoding = bodyEncoding;
+
+            IsWebSocket = false;
+            if (method == HttpMethod.Get)
+            {
+                var connection = GetHeader("connection")?.ToLowerInvariant();
+                if (connection != null)
+                    IsWebSocket = HttpServer.HttpHeaderContains(connection, "upgrade") || HttpServer.HttpHeaderContains(connection, "websocket");
+            }
         }
 
         public string GetHeader(string name)
