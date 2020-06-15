@@ -294,14 +294,16 @@ namespace StatsHelix.Charizard
 
                 // read body into byte array (not sure about this tho)
                 var body = new byte[bodyLength];
-                int read = 1337;
-                int i = 0;
-                for (; (i < body.Length) && (read != 0); i += read)
-                    read = await reader.ReadAsync(body, i, body.Length - i);
-                if (read == 0)
+                int bodyRead = 0;
+                while (bodyRead < body.Length)
                 {
-                    return await WriteBadRequest(questing, writer,
-                        $"Invalid request: content length is {bodyLength} bytes, but stream closed after {i} bytes");
+                    int read = await reader.ReadAsync(body, bodyRead, body.Length - bodyRead);
+                    if (read == 0)
+                    {
+                        return await WriteBadRequest(questing, writer,
+                            $"Invalid request: content length is {bodyLength} bytes, but stream closed after {bodyRead} bytes");
+                    }
+                    bodyRead += read;
                 }
 
                 request.Body = body;
