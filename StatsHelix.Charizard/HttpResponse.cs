@@ -9,7 +9,7 @@ using System.Web;
 
 namespace StatsHelix.Charizard
 {
-    public struct HttpResponse
+    public struct HttpResponse<T>
     {
         /// <summary>
         /// Disables setting security attributes for all cookies.
@@ -28,7 +28,7 @@ namespace StatsHelix.Charizard
 
         // Accidentally quadratic, I know.
         // But n is small and I like the ergonomics of doing it this way.
-        public HttpResponse SetHeader(string name, string value)
+        public HttpResponse<T> SetHeader(string name, string value)
         {
             int? found = null;
             if (ExtraHeaders == null)
@@ -64,7 +64,7 @@ namespace StatsHelix.Charizard
         /// <param name="name">The header name.</param>
         /// <param name="value">The header value.</param>
         /// <returns>The modified HttpResponse.</returns>
-        public HttpResponse AddHeader(string name, string value)
+        public HttpResponse<T> AddHeader(string name, string value)
         {
             if (ExtraHeaders == null)
                 ExtraHeaders = new List<HttpHeader>();
@@ -85,7 +85,7 @@ namespace StatsHelix.Charizard
         /// <param name="value">The cookie value.</param>
         /// <param name="expiration">The cookie's expiration date.</param>
         /// <returns></returns>
-        public HttpResponse SetCookie(string name, string value, bool secure, DateTimeOffset? expiration = null, string path = "/")
+        public HttpResponse<T> SetCookie(string name, string value, bool secure, DateTimeOffset? expiration = null, string path = "/")
         {
             var header = name + "=" + HttpUtility.UrlEncode(value) + "; Path=" + path;
             if (expiration != null)
@@ -102,32 +102,42 @@ namespace StatsHelix.Charizard
         private static readonly byte[] Default404Message = UTF8.GetBytes("Not found. :(");
         private static readonly byte[] DefaultRedirectMessage = UTF8.GetBytes("Redirect.");
 
-        public static HttpResponse NotFound()
+        public static HttpResponse<string> NotFound()
         {
-            return Data(Default404Message, HttpStatus.NotFound, ContentType.Plaintext);
+            return Data<string>(Default404Message, HttpStatus.NotFound, ContentType.Plaintext);
         }
 
-        public static HttpResponse Json(object o, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Json)
+        public static HttpResponse<X> Json<X>(X o, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Json)
         {
-            return String(JsonConvert.SerializeObject(o, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), status, contentType);
+            return TypedString<X>(JsonConvert.SerializeObject(o, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }), status, contentType);
         }
 
-        public static HttpResponse String(string s, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Plaintext)
+        public static HttpResponse<string> String(string s, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Plaintext)
         {
-            return Data(UTF8.GetBytes(s), status, contentType);
+            return TypedData<string>(UTF8.GetBytes(s), status, contentType);
         }
 
-        public static HttpResponse Data(byte[] data, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.OctetStream)
+        public static HttpResponse<X> TypedString<X>(string s, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.Plaintext)
         {
-            return Data(new ArraySegment<byte>(data), status, contentType);
+            return TypedData<X>(UTF8.GetBytes(s), status, contentType);
         }
 
-        public static HttpResponse Data(ArraySegment<byte> data, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.OctetStream)
+        public static HttpResponse<byte[]> Data(byte[] data, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.OctetStream)
+        {
+            return Data<byte[]>(new ArraySegment<byte>(data), status, contentType);
+        }
+
+        public static HttpResponse<X> TypedData<X>(byte[] data, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.OctetStream)
+        {
+            return Data<X>(new ArraySegment<byte>(data), status, contentType);
+        }
+
+        public static HttpResponse<X> Data<X>(ArraySegment<byte> data, HttpStatus status = HttpStatus.Ok, ContentType contentType = ContentType.OctetStream)
         {
             if ((data.Count == 0) && (status == HttpStatus.Ok))
                 status = HttpStatus.NoContent;
 
-            return new HttpResponse
+            return new HttpResponse<X>
             {
                 Status = status,
                 ContentType = contentType,

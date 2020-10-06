@@ -21,14 +21,15 @@ namespace StatsHelix.Charizard
         private static readonly Type[] QuerystringPrimitives = new[] { typeof(string), typeof(string[]), typeof(int), typeof(long), typeof(bool), typeof(double) };
 
         [Serializable]
-        private class CodegenInfo
+        internal class CodegenInfo
         {
             public ControllerDefinition[] Controllers { get; set; }
             public MethodInfo[] AppMiddleware { get; set; }
+            public string FullHash { get; set; }
         }
 
         [Serializable]
-        private class ControllerDefinition
+        internal class ControllerDefinition
         {
             public ControllerAttribute Info { get; }
             public Type Type { get; }
@@ -76,7 +77,7 @@ namespace StatsHelix.Charizard
         }
 
         [Serializable]
-        private class ActionDefinition
+        internal class ActionDefinition
         {
             public ControllerDefinition Controller { get; }
             public MethodInfo Method { get; }
@@ -101,6 +102,14 @@ namespace StatsHelix.Charizard
         {
             Server = server;
 
+            var manager = new DynamicMsilManager(CharizardDynamic, CharizardDynamic);
+            var compileParams = GetCodegenInfo(assemblies);
+            var ass = manager.Generate(compileParams.FullHash, CompileDynamicCode, compileParams);
+            Dispatcher = (IRequestDispatcher)Activator.CreateInstance(ass.GetType(RequestDispatcher));
+        }
+
+        internal static CodegenInfo GetCodegenInfo(Assembly[] assemblies)
+        {
             var qAppMiddleware = from assembly in assemblies
                                  from type in assembly.ExportedTypes
                                  from attr in type.GetCustomAttributes<MiddlewareAttribute>()
@@ -146,14 +155,12 @@ namespace StatsHelix.Charizard
             var fullHash = VERSION + String.Join("\n", byController.Select(x => x.Key))
                 + "\n\nMiddleware:\n" + String.Join("\n", appMiddleware.Select(x => $"{x.DeclaringType.FullName}.{x.Name}"));
 
-            var manager = new DynamicMsilManager(CharizardDynamic, CharizardDynamic);
-            var compileParams = new CodegenInfo
+            return new CodegenInfo
             {
                 Controllers = byController.Select(x => x.Key).ToArray(),
                 AppMiddleware = appMiddleware,
+                FullHash = fullHash,
             };
-            var ass = manager.Generate(fullHash, CompileDynamicCode, compileParams);
-            Dispatcher = (IRequestDispatcher)Activator.CreateInstance(ass.GetType(RequestDispatcher));
         }
 
         private static IEnumerable<MethodInfo> ParseMiddlewareClass(Type type)

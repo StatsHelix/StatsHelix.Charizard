@@ -66,6 +66,12 @@ namespace StatsHelix.Charizard
             RoutingManager = new RoutingManager(this, controllerAssemblies);
         }
 
+        public static string GenerateTypescriptCode(params Assembly[] controllerAssemblies)
+        {
+            var info = RoutingManager.GetCodegenInfo(controllerAssemblies);
+            return TypeScriptCodeGen.GenerateApi(info);
+        }
+
         public async Task Run()
         {
             var socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
