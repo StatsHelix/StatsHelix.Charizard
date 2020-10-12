@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Backend\IRequestDispatcher.cs" />
     <Compile Include="BadRequestEvent.cs" />
+    <Compile Include="CaptureIter.cs" />
     <Compile Include="ContentType.cs" />
     <Compile Include="ControllerAttribute.cs" />
     <Compile Include="DynamicMsilManager.cs" />
