@@ -2,6 +2,8 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -108,7 +110,7 @@ namespace StatsHelix.Charizard
         /// <param name="value">The cookie value.</param>
         /// <param name="expiration">The cookie's expiration date.</param>
         /// <returns></returns>
-        public HttpResponse SetCookie(string name, string value, bool secure, DateTimeOffset? expiration = null, string path = "/")
+        public HttpResponse SetCookie(string name, string value, bool secure, DateTimeOffset? expiration = null, string path = "/", SameSitePolicy sameSite = SameSitePolicy.Lax)
         {
             var header = name + "=" + HttpUtility.UrlEncode(value) + "; Path=" + path;
             if (expiration != null)
@@ -116,6 +118,11 @@ namespace StatsHelix.Charizard
 
             if (secure && !InsecureMode_DoNotUseThisInProduction)
                 header += "; HttpOnly; Secure";
+
+            if (sameSite == SameSitePolicy.None && !secure)
+                throw new ArgumentException("If SameSite is set to None, the cookie must be secure.");
+
+            header += "; SameSite=" + sameSite.ToString();
 
             return AddHeader("Set-Cookie", header);
         }

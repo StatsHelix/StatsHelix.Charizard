@@ -73,7 +73,7 @@ namespace StatsHelix.Charizard
 #endif
         }
 
-        private readonly RoutingManager RoutingManager;
+        internal readonly RoutingManager RoutingManager;
 
         public HttpServer(IPEndPoint endpoint, params Assembly[] controllerAssemblies)
         {

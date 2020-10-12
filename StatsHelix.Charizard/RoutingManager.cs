@@ -110,6 +110,8 @@ namespace StatsHelix.Charizard
         private readonly HttpServer Server;
         private readonly IRequestDispatcher Dispatcher;
 
+        internal readonly Dictionary<string, MethodInfo> Actions = new Dictionary<string, MethodInfo>();
+
         public RoutingManager(HttpServer server, Assembly[] assemblies)
         {
             Server = server;
@@ -132,6 +134,13 @@ namespace StatsHelix.Charizard
                 var plural = bugs.Count > 1;
                 throw new InvalidProgramException($"The class{(plural ? "es" : "")} {string.Join(", ", bugs)} {(plural ? "are" : "is")} declared as charizard-controller, but not declared as public. Remove the attribute, or make it the type public.");
             }
+
+            foreach (var controller in byController)
+                controller.Key.Actions = controller.ToArray();
+
+            foreach (var controller in byController)
+                foreach (var action in controller.Key.Actions)
+                    Actions[controller.Key.Info.Prefix + action.Name] = action.Method;
 
             // We compose using '|', '`', '\n' because these are invalid in URLs.
             // Of course you could still screw things up here but frankly, why would you (other than to shoot your own foot)?

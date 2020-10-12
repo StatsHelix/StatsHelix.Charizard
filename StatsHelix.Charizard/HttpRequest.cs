@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -51,6 +52,7 @@ namespace StatsHelix.Charizard
                 };
             }
         }
+        public MethodInfo Target => Server.RoutingManager.Actions.GetValueOrDefault(Path.ToString(), null);
 
         private readonly string PathUnderlying;
         private readonly int PathIndex;

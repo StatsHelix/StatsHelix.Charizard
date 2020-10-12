@@ -52,6 +52,7 @@
     <Compile Include="ContentType.cs" />
     <Compile Include="ControllerAttribute.cs" />
     <Compile Include="DynamicMsilManager.cs" />
+    <Compile Include="Helpers.cs" />
     <Compile Include="HttpHeader.cs" />
     <Compile Include="HttpMethod.cs" />
     <Compile Include="HttpRequest.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="QueueStream.cs" />
     <Compile Include="RegexApiAbuse.cs" />
     <Compile Include="RoutingManager.cs" />
+    <Compile Include="SameSitePolicy.cs" />
     <Compile Include="StringSegment.cs" />
     <Compile Include="MagicIdAttribute.cs" />
   </ItemGroup>
