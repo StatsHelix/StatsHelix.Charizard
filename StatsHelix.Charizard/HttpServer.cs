@@ -106,6 +106,7 @@ namespace StatsHelix.Charizard
             "HTTP/1.1 302 Found",
             "HTTP/1.1 303 See other",
             "HTTP/1.1 304 Not Modified",
+            "HTTP/1.1 307 Temporary Redirect",
             "HTTP/1.1 400 Bad Request",
             "HTTP/1.1 403 Forbidden",
             "HTTP/1.1 404 Not Found",

@@ -20,6 +20,7 @@ namespace StatsHelix.Charizard
         Found,
         SeeOther,
         NotModified,
+        TemporaryRedirect,
 
         // 4XX
         BadRequest,
